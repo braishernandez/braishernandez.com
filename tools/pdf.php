@@ -2,14 +2,14 @@
   <div class="section-header">
     <p class="section-label">Herramienta</p>
     <h2>📄 Herramientas PDF</h2>
-    <p>Une varios PDFs en uno o convierte un PDF a otros formatos, todo en tu navegador.<br>
-    <strong>🔒 Tus archivos no se suben a ningún servidor</strong> — el procesamiento es 100% local en tu dispositivo y los archivos se eliminan de la memoria al cerrar la pestaña.</p>
+    <p>Une varios PDFs en uno o convierte un PDF a otros formatos, todo en tu navegador.</p>
   </div>
 
   <!-- UNIR PDFs -->
   <div class="tool-box">
     <h3>📎 Unir varios PDF en uno</h3>
-    <p class="desc">Sube múltiples archivos PDF y se combinarán en el orden que aparecen. El procesamiento es 100% local, tus archivos no se suben a ningún servidor.</p>
+    <p class="desc">Sube múltiples archivos PDF y se combinarán en el orden que aparecen.<br>
+    <strong>🔒 Tus archivos no se suben a ningún servidor</strong> — el procesamiento es 100% local en tu dispositivo y los archivos se eliminan de la memoria al cerrar la pestaña.</p>
 
     <div class="drop-zone" id="merge-drop"
          onclick="document.getElementById('merge-input').click()"
