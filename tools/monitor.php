@@ -1,43 +1,72 @@
 <?php
 session_start();
 
-// ── AJAX: check URL ──────────────────────────────────────────────────────────
+// ── RATE LIMITING ─────────────────────────────────────────────────────────────
+$ip      = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+$rateKey = 'mon_rate_' . md5($ip);
+$now     = time();
+if (!isset($_SESSION[$rateKey])) $_SESSION[$rateKey] = ['count' => 0, 'start' => $now];
+if ($now - $_SESSION[$rateKey]['start'] > 60) $_SESSION[$rateKey] = ['count' => 0, 'start' => $now];
+$_SESSION[$rateKey]['count']++;
+if ($_SESSION[$rateKey]['count'] > 20 && isset($_POST['action'])) {
+    header('Content-Type: application/json');
+    http_response_code(429);
+    echo json_encode(['success' => false, 'error' => 'Demasiadas peticiones.']);
+    exit;
+}
+
+// Dominios no permitidos en el monitor (evitar SSRF a red interna)
+function isBlockedUrl(string $url): bool {
+    $host = strtolower(parse_url($url, PHP_URL_HOST) ?? '');
+    $ip   = gethostbyname($host);
+    // Bloquear IPs privadas / locales (SSRF)
+    return filter_var($ip, FILTER_VALIDATE_IP, 
+        FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
+}
+
+// ── AJAX: check URL ───────────────────────────────────────────────────────────
 if (isset($_POST['action']) && $_POST['action'] === 'check') {
     header('Content-Type: application/json');
 
     $url = filter_var(trim($_POST['url'] ?? ''), FILTER_VALIDATE_URL);
     if (!$url) {
-        echo json_encode(['success' => false, 'error' => 'URL inválida']);
-        exit;
+        echo json_encode(['success' => false, 'error' => 'URL inválida']); exit;
+    }
+
+    // Bloquear SSRF — no permitir acceso a red interna
+    if (isBlockedUrl($url)) {
+        echo json_encode(['success' => false, 'error' => 'URL no permitida']); exit;
+    }
+
+    // Solo http/https
+    $scheme = strtolower(parse_url($url, PHP_URL_SCHEME) ?? '');
+    if (!in_array($scheme, ['http', 'https'])) {
+        echo json_encode(['success' => false, 'error' => 'Solo se permiten URLs http/https']); exit;
     }
 
     $context = stream_context_create([
         'http' => [
-            'timeout'    => 10,
-            'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'timeout'         => 10,
+            'user_agent'      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             'follow_location' => 1,
+            'max_redirects'   => 3,
         ],
-        'ssl' => [
-            'verify_peer'      => false,
-            'verify_peer_name' => false,
-        ]
+        'ssl' => ['verify_peer' => false, 'verify_peer_name' => false]
     ]);
 
     $content = @file_get_contents($url, false, $context);
     if ($content === false) {
-        echo json_encode(['success' => false, 'error' => 'No se pudo acceder a la URL']);
-        exit;
+        echo json_encode(['success' => false, 'error' => 'No se pudo acceder a la URL']); exit;
     }
 
-    $text = preg_replace('/\s+/', ' ', strip_tags($content));
-    $hash = md5($text);
+    // Limitar tamaño para evitar DoS
+    $content = substr($content, 0, 2 * 1024 * 1024); // máx 2MB
+    $text    = preg_replace('/\s+/', ' ', strip_tags($content));
+    $hash    = md5($text);
 
     $changed = false;
-    if (
-        isset($_SESSION['mon_hash'], $_SESSION['mon_url']) &&
-        $_SESSION['mon_url'] === $url &&
-        $_SESSION['mon_hash'] !== $hash
-    ) {
+    if (isset($_SESSION['mon_hash'], $_SESSION['mon_url']) &&
+        $_SESSION['mon_url'] === $url && $_SESSION['mon_hash'] !== $hash) {
         $changed = true;
     }
 
@@ -53,21 +82,21 @@ if (isset($_POST['action']) && $_POST['action'] === 'check') {
     exit;
 }
 
-// ── AJAX: reset session ──────────────────────────────────────────────────────
+// ── AJAX: reset session ───────────────────────────────────────────────────────
 if (isset($_POST['action']) && $_POST['action'] === 'reset') {
     header('Content-Type: application/json');
-    session_start();
     unset($_SESSION['mon_hash'], $_SESSION['mon_url']);
     echo json_encode(['success' => true]);
     exit;
 }
 
-// ── AJAX: proxy preview ──────────────────────────────────────────────────────
+// ── PROXY PREVIEW ─────────────────────────────────────────────────────────────
 if (isset($_GET['proxy'])) {
     $url = $_SESSION['mon_url'] ?? '';
-    if ($url) {
+    // Solo servir si la URL ya fue validada y está en sesión
+    if ($url && filter_var($url, FILTER_VALIDATE_URL) && !isBlockedUrl($url)) {
         $context = stream_context_create([
-            'http' => ['timeout' => 10, 'user_agent' => 'Mozilla/5.0'],
+            'http' => ['timeout' => 10, 'user_agent' => 'Mozilla/5.0', 'max_redirects' => 3],
             'ssl'  => ['verify_peer' => false, 'verify_peer_name' => false],
         ]);
         $content = @file_get_contents($url, false, $context);
@@ -98,11 +127,8 @@ if (isset($_GET['proxy'])) {
       <button class="btn btn-accent" id="mon-btn" onclick="toggleMonitor()">▶ Monitorizar</button>
     </div>
 
-    <!-- Indicador + Timer + Stats -->
     <div class="mon-dashboard">
-      <button class="mon-indicator status-gray" id="mon-indicator" onclick="openMonUrl()">
-        ESPERANDO
-      </button>
+      <button class="mon-indicator status-gray" id="mon-indicator" onclick="openMonUrl()">ESPERANDO</button>
       <div>
         <div class="mon-timer" id="mon-timer">00:00</div>
         <div class="mon-timer-label">Tiempo activo</div>
@@ -123,7 +149,6 @@ if (isset($_GET['proxy'])) {
       </div>
     </div>
 
-    <!-- Preview -->
     <div id="mon-preview-wrap" style="display:none; margin-top:1rem">
       <label class="field-label">Vista previa</label>
       <div class="preview-frame-wrap">
@@ -134,7 +159,7 @@ if (isset($_GET['proxy'])) {
     <div class="status-box" id="mon-status"></div>
 
     <div class="info-note">
-      ℹ️ Haz clic en el indicador de color para abrir la URL en nueva pestaña. La primera comprobación establece la línea base; los cambios se detectan a partir de la segunda.
+      ℹ️ Haz clic en el indicador de color para abrir la URL en nueva pestaña. Solo se permiten URLs públicas (http/https).
     </div>
   </div>
 </section>
