@@ -2,6 +2,7 @@
 $page = isset($_GET['page']) ? $_GET['page'] : 'inicio';
 $nav_items = [
   'inicio'       => 'Inicio',
+  'sobremi'      => 'Sobre mí',
   'monitor'      => 'Monitor',
   'videos'       => 'Vídeos',
   'pdf'          => 'PDF',
