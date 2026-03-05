@@ -25,6 +25,7 @@
         <div class="skill-tags">
           <span class="tag">C#</span><span class="tag">HTML</span>
           <span class="tag">CSS</span><span class="tag">JavaScript</span><span class="tag">SQL</span>
+          <span class="tag">PHP</span>
         </div>
       </div>
       <div class="skill-group">
@@ -32,6 +33,7 @@
         <div class="skill-tags">
           <span class="tag">Visual Studio</span><span class="tag">SQL Server</span>
           <span class="tag">WordPress</span><span class="tag">Asterisk</span>
+          <span class="tag">Git / GitHub</span><span class="tag">yt-dlp</span><span class="tag">ffmpeg</span>
         </div>
       </div>
       <div class="skill-group">
@@ -39,6 +41,7 @@
         <div class="skill-tags">
           <span class="tag">Windows Server</span><span class="tag">Linux</span>
           <span class="tag">Redes</span><span class="tag">PRTG</span><span class="tag">Videovigilancia</span>
+          <span class="tag">Apache</span><span class="tag">PHP-FPM</span><span class="tag">SSH</span><span class="tag">Cron</span>
         </div>
       </div>
       <div class="skill-group">
