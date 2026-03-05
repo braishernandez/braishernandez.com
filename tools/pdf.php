@@ -2,7 +2,8 @@
   <div class="section-header">
     <p class="section-label">Herramienta</p>
     <h2>📄 Herramientas PDF</h2>
-    <p>Une varios PDFs en uno o convierte un PDF a otros formatos, todo en tu navegador.</p>
+    <p>Une varios PDFs en uno o convierte un PDF a otros formatos, todo en tu navegador.<br>
+    <strong>🔒 Tus archivos no se suben a ningún servidor</strong> — el procesamiento es 100% local en tu dispositivo y los archivos se eliminan de la memoria al cerrar la pestaña.</p>
   </div>
 
   <!-- UNIR PDFs -->
@@ -33,7 +34,7 @@
   <!-- CONVERTIR PDF -->
   <div class="tool-box">
     <h3>🔄 Convertir PDF</h3>
-    <p class="desc">Sube un PDF y conviértelo a imágenes JPG (una por página) directamente en el navegador. La conversión a Word usa un servicio externo de confianza.</p>
+    <p class="desc">Sube un PDF y conviértelo directamente en el navegador. La conversión a Word usa un servicio externo de confianza.</p>
 
     <div class="drop-zone" id="convert-drop"
          onclick="document.getElementById('convert-input').click()"
@@ -46,13 +47,15 @@
     <input type="file" id="convert-input" accept=".pdf" style="display:none" onchange="selectConvertFile(this.files[0])">
 
     <div class="btn-row" style="margin-top:0.75rem">
-      <button class="btn btn-accent" onclick="convertTo('jpg')">🖼 Convertir a JPG</button>
+      <button class="btn btn-accent"  onclick="convertTo('jpg')">🖼 Convertir a JPG</button>
+      <button class="btn btn-accent"  onclick="convertTo('xlsx')">📊 Convertir a Excel</button>
       <button class="btn btn-outline" onclick="convertTo('docx')">📝 Convertir a Word</button>
       <button class="btn btn-outline" onclick="clearConvert()">✕ Limpiar</button>
     </div>
     <div class="status-box" id="convert-status"></div>
 
     <div class="info-note" style="margin-top:1rem">
+      <strong>Nota Excel:</strong> Extrae el texto del PDF a filas. Ideal para PDFs con datos tabulares simples.<br>
       <strong>Conversión a Word:</strong> Servicios externos gratuitos recomendados:
       <div class="btn-row" style="margin-top:0.5rem">
         <a href="https://ilovepdf.com/es/pdf_a_word" target="_blank" class="btn btn-outline btn-sm">iLovePDF</a>

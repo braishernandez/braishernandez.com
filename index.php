@@ -6,7 +6,7 @@ define('BASE_PATH', __DIR__);
 @ini_set('memory_limit', '256M');
 
 $page = isset($_GET['page']) ? $_GET['page'] : 'inicio';
-$allowed = ['inicio', 'monitor', 'videos', 'pdf', 'curiosidades'];
+$allowed = ['inicio', 'monitor', 'videos', 'pdf', 'curiosidades', 'cookies'];
 if (!in_array($page, $allowed)) $page = 'inicio';
 ?>
 <!DOCTYPE html>
@@ -35,6 +35,7 @@ if (!in_array($page, $allowed)) $page = 'inicio';
 <?php if ($page === 'pdf'): ?>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="assets/js/pdf.js"></script>
 <?php endif; ?>
 <?php if ($page === 'videos'): ?>

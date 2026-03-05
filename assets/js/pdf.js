@@ -68,9 +68,57 @@ function convertTo(format) {
     showStatus('convert-status', 'error', '⚠️ Por favor selecciona un archivo PDF primero.');
     return;
   }
-  if (format === 'jpg') convertToJPG();
+  if (format === 'jpg')  convertToJPG();
+  else if (format === 'xlsx') convertToExcel();
   else showStatus('convert-status', 'info',
     '📝 La conversión a Word requiere procesamiento externo. Usa iLovePDF o SmallPDF (enlaces abajo) — son gratuitos y seguros.');
+}
+
+async function convertToExcel() {
+  showStatus('convert-status', 'loading', '⏳ Extrayendo texto del PDF...');
+  try {
+    const pdfjsLib = window['pdfjs-dist/build/pdf'];
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    const buf  = await convertFile.arrayBuffer();
+    const pdf  = await pdfjsLib.getDocument({ data: buf }).promise;
+    const n    = pdf.numPages;
+
+    // Extraer texto página a página
+    const rows = [];
+    rows.push(['Página', 'Contenido']);
+    for (let i = 1; i <= n; i++) {
+      const page    = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      // Agrupar items por línea aproximada (misma Y)
+      const lines = {};
+      for (const item of content.items) {
+        const y = Math.round(item.transform[5]);
+        if (!lines[y]) lines[y] = [];
+        lines[y].push(item.str);
+      }
+      // Ordenar de arriba a abajo
+      const sortedYs = Object.keys(lines).map(Number).sort((a, b) => b - a);
+      for (const y of sortedYs) {
+        const text = lines[y].join(' ').trim();
+        if (text) rows.push([i, text]);
+      }
+    }
+
+    // Crear Excel con SheetJS
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    // Ancho de columnas
+    ws['!cols'] = [{ wch: 8 }, { wch: 100 }];
+    XLSX.utils.book_append_sheet(wb, ws, 'Contenido PDF');
+    const filename = convertFile.name.replace('.pdf', '') + '.xlsx';
+    XLSX.writeFile(wb, filename);
+
+    showStatus('convert-status', 'success', `✅ Excel generado con ${rows.length - 1} líneas de ${n} página(s).`);
+  } catch (e) {
+    showStatus('convert-status', 'error', '❌ Error al convertir: ' + e.message);
+  }
 }
 
 async function convertToJPG() {
